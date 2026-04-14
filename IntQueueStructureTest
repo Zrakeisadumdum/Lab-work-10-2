@@ -1,0 +1,89 @@
+// src/test/java/ArrayIntQueueStructuralTest.java
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Field;
+public class ArrayIntQueueStructuralTest {
+    private ArrayIntQueue queue;
+    @BeforeEach
+    public void setUp() {
+        queue = new ArrayIntQueue(5);
+    }
+    // Reflection ашиглан private талбаруудын утгыг шалгах
+    private Object getFieldValue(String fieldName) {
+        try {
+            Field field = ArrayIntQueue.class.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(queue);
+        } catch (Exception e) {
+            fail("Cannot access field: " + fieldName);
+            return null;
+        }
+    }
+    @Test
+    @DisplayName("Wrap-around үед зөв ажиллах эсэх")
+    public void testWrapAround() {
+        // Эхний 5 элемент нэмэх
+        for (int i = 0; i < 5; i++) {
+            queue.enqueue(i);
+        }
+        // 2 элемент гаргах
+        assertEquals(0, queue.dequeue());
+        assertEquals(1, queue.dequeue());
+        // Дараа нь элемент нэмэх (wrap-around үүсэх)
+        queue.enqueue(5);
+        queue.enqueue(6);
+        // Дотоод төлөвийг шалгах
+        assertEquals(0, getFieldValue("front"));  // front 0 байх ёстой
+        assertEquals(1, getFieldValue("rear"));   // rear 1 байх ёстой
+        assertEquals(5, queue.size());
+        // Дараалал зөв эсэх
+        assertEquals(2, queue.dequeue());
+        assertEquals(3, queue.dequeue());
+        assertEquals(4, queue.dequeue());
+        assertEquals(5, queue.dequeue());
+        assertEquals(6, queue.dequeue());
+    }
+    @Test
+    @DisplayName("Олон удаагийн enqueue/dequeue-ийн дараа зөв ажиллах")
+    public void testMultipleOperations() {
+        for (int i = 0; i < 100; i++) {
+            queue.enqueue(i);
+            if (i % 2 == 0 && !queue.isEmpty()) {
+                queue.dequeue();
+            }
+        }
+        // Дотоод төлөвийг шалгах
+        int front = (int) getFieldValue("front");
+        int rear = (int) getFieldValue("rear");
+        int count = (int) getFieldValue("count");
+        assertTrue(count >= 0);
+        assertTrue(count <= 5);
+        assertTrue(front >= 0 && front < 5);
+        assertTrue(rear >= -1 && rear < 5);
+    }
+    @Test
+    @DisplayName("Clear хийсний дараа дотоод төлөв зөв эсэх")
+    public void testClearInternalState() {
+        queue.enqueue(10);
+        queue.enqueue(20);
+        queue.enqueue(30);
+        queue.clear();
+        assertEquals(0, getFieldValue("front"));
+        assertEquals(-1, getFieldValue("rear"));
+        assertEquals(0, getFieldValue("count"));
+    }
+    @Test
+    @DisplayName("Resize хийсний дараа дотоод массив зөв хэмжээтэй эсэх")
+    public void testResizeInternalArray() {
+        for (int i = 0; i < 10; i++) {
+            queue.enqueue(i);
+        }
+        int capacity = (int) getFieldValue("capacity");
+        int[] array = (int[]) getFieldValue("array");
+        assertEquals(10, capacity);
+        assertEquals(10, array.length);
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i, array[i]);
+        }
+    }
+}
