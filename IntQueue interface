@@ -1,0 +1,9 @@
+// src/main/java/IntQueue.java
+public interface IntQueue {
+    void enqueue(int value);
+    int dequeue();
+    int peek();
+    boolean isEmpty();
+    int size();
+    void clear();
+}
